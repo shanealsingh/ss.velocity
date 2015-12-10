@@ -8,9 +8,17 @@
    */
   var SSVelocity = function(options) {
     var _self  = this;
-    var _callbacks = [];
+
+    //** hold all the callbacks
+    var _callbacks = { start: [], velocity: [], end: [] };
+
+    //** keep track of prev mouse x
     var x = 0;
+
+    //** keep track of prev mouse y
     var y = 0;
+
+    //** keep track of prev time
     var t;
 
     /**
@@ -66,16 +74,30 @@
      * @param {function} callback function
      */
     _self.velocity = function(callback) {
-      var callbacks = _callbacks.filter(function(_callback) {
-        if(callback === _callback) {
-          return false;
-        }
+      if(inArray(_callbacks.velocity, callback) === 0) {
+        _callbacks.velocity.push(callback);
+      }
+    };
 
-        return true;
-      });
 
-      if(callbacks.length === 0) {
-        _callbacks.push(callback);
+    /**
+     * Callback function when velocity change has been detected
+     * @param {function} callback function
+     */
+    _self.start = function(callback) {
+      if(inArray(_callbacks.start, callback) === 0) {
+        _callbacks.start.push(callback);
+      }
+    };
+
+
+    /**
+     * Callback function when end change has been detected
+     * @param {function} callback function
+     */
+    _self.end = function(callback) {
+      if(inArray(_callbacks.end, callback) === 0) {
+        _callbacks.end.push(callback);
       }
     };
 
@@ -121,6 +143,9 @@
         y = e.clientY;
         addMoveListener();
         addUpListener();
+        _callbacks.start.forEach(function(callback) {
+          callback.call();
+        });
       }
     }
 
@@ -137,7 +162,7 @@
       var data = {};
       data.velocity = v;
 
-      _callbacks.forEach(function(callback) {
+      _callbacks.velocity.forEach(function(callback) {
         callback.call(data);
       });
 
@@ -151,6 +176,9 @@
     function mouseUp(e) {
       removeMoveListener();
       removeUpListener();
+      _callbacks.end.forEach(function(callback) {
+        callback.call();
+      });
     }
 
 
@@ -231,6 +259,17 @@
     }
 
     return c;
+  }
+
+  function inArray(array, obj) {
+    var ary = array.filter(function(_callback) {
+      if(callback === _callback) {
+        return false;
+      }
+
+      return true;
+    });
+    return ary.length;
   }
 
 
